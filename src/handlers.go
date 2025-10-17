@@ -28,9 +28,10 @@ func handlePing(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Get the last 20 message IDs from history
+	// Get the last 20 message IDs from history for THIS channel
 	var recentMessageIDs []uint
 	db.Model(&MessageHistory{}).
+		Where("channel_id = ?", m.ChannelID).
 		Order("sent_at DESC").
 		Limit(20).
 		Pluck("message_id", &recentMessageIDs)
@@ -52,8 +53,11 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Record this message in history
-	history := MessageHistory{MessageID: message.ID}
+	// Record this message in history with channel ID
+	history := MessageHistory{
+		MessageID: message.ID,
+		ChannelID: m.ChannelID,
+	}
 	if err := db.Create(&history).Error; err != nil {
 		log.Printf("Error recording message history: %v", err)
 	}

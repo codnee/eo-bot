@@ -19,6 +19,7 @@ type MessageHistory struct {
 	ID        uint      `gorm:"primaryKey"`
 	MessageID uint      `gorm:"not null;index;constraint:OnDelete:CASCADE"`
 	Message   Message   `gorm:"foreignKey:MessageID"`
+	ChannelID string    `gorm:"not null;index"`
 	SentAt    time.Time `gorm:"autoCreateTime;index"`
 }
 
