@@ -24,6 +24,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		handleEo(s, m)
 	case "!latest":
 		handleLatest(s, m)
+	case "!help":
+		handleHelp(s, m)
 	}
 }
 
@@ -121,4 +123,20 @@ func handleLatest(s *discordgo.Session, m *discordgo.MessageCreate) {
     if err != nil {
         log.Printf("Error sending latest message: %v", err)
     }
+}
+
+func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
+	helpMessage := `📝 **Available Commands** 📝
+
+- ` + "`!new <message>`" + ` - Save a new message to the database (DMs only)
+- ` + "`!eo`" + ` - Get a random message from the database
+- ` + "`!latest`" + ` - Get the most recent message from the database
+- ` + "`!help`" + ` - Show this help message
+
+For support, contact the bot administrator.`
+
+	_, err := s.ChannelMessageSend(m.ChannelID, helpMessage)
+	if err != nil {
+		log.Printf("Error sending help message: %v", err)
+	}
 }
