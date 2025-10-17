@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -24,6 +26,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		handlePing(s, m)
 	case "!eo":
 		handleEo(s, m)
+	case "!crawl":
+		handleCrawl(s, m)
 	}
 }
 
@@ -107,4 +111,87 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if err != nil {
 		log.Printf("Error sending message: %v", err)
 	}
+}
+
+func handleCrawl(s *discordgo.Session, m *discordgo.MessageCreate) {
+    // Send initial message
+    msg, err := s.ChannelMessageSend(m.ChannelID, "🔄 Crawling channel history for EO Bot messages...")
+    if err != nil {
+        log.Printf("Error sending initial message: %v", err)
+        return
+    }
+
+    var messagesSaved, messagesSkipped int
+    var beforeID string
+
+    // Keep fetching messages until we reach the beginning of the channel
+    for {
+        // Fetch messages (100 at a time, which is the maximum allowed by Discord)
+        messages, err := s.ChannelMessages(m.ChannelID, 100, beforeID, "", "")
+        if err != nil {
+            log.Printf("Error fetching messages: %v", err)
+            s.ChannelMessageEdit(m.ChannelID, msg.ID, "❌ Error: Could not fetch messages from this channel")
+            return
+        }
+
+        // If no more messages, we're done
+        if len(messages) == 0 {
+            break
+        }
+
+        // Process messages
+        for _, message := range messages {
+            // Skip if not from a bot or not from "EO Bot"
+            if !message.Author.Bot || message.Author.Username != "EO Bot" {
+                continue
+            }
+
+            // Skip if message is empty or is a command
+            content := strings.TrimSpace(message.Content)
+            if content == "" || strings.HasPrefix(content, "!") {
+                continue
+            }
+
+            // Try to save the message (will skip duplicates due to unique constraint)
+            msg := Message{
+                Content: content,
+            }
+            result := db.Create(&msg)
+
+            if result.Error != nil {
+                // Skip duplicate messages (error 19 is SQLite's constraint violation)
+                if !strings.Contains(result.Error.Error(), "UNIQUE constraint failed") {
+                    log.Printf("Error saving message: %v", result.Error)
+                }
+                messagesSkipped++
+            } else {
+                messagesSaved++
+
+                // Add to message history
+                history := MessageHistory{
+                    MessageID: msg.ID,
+                    ChannelID: m.ChannelID,
+                }
+                if err := db.Create(&history).Error; err != nil {
+                    log.Printf("Error saving message history: %v", err)
+                }
+            }
+        }
+
+        // Update the beforeID to the ID of the last message in this batch
+        beforeID = messages[len(messages)-1].ID
+
+        // Update status message
+        s.ChannelMessageEdit(m.ChannelID, msg.ID, 
+            fmt.Sprintf("🔄 Crawling... Found %d messages (%d saved, %d skipped)", 
+                messagesSaved + messagesSkipped, messagesSaved, messagesSkipped))
+
+        // Small delay to avoid rate limiting
+        time.Sleep(500 * time.Millisecond)
+    }
+
+    // Send final message
+    s.ChannelMessageEdit(m.ChannelID, msg.ID, 
+        fmt.Sprintf("✅ Crawl complete! Processed %d messages.\n- Saved: %d\n- Skipped (duplicates): %d",
+            messagesSaved + messagesSkipped, messagesSaved, messagesSkipped))
 }
