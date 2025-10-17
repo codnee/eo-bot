@@ -24,6 +24,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		handlePing(s, m)
 	case "!eo":
 		handleEo(s, m)
+	case "!latest":
+		handleLatest(s, m)
 	}
 }
 
@@ -107,4 +109,25 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if err != nil {
 		log.Printf("Error sending message: %v", err)
 	}
+}
+
+func handleLatest(s *discordgo.Session, m *discordgo.MessageCreate) {
+    var message Message
+    // Get the most recent message based on ID (assuming auto-incrementing)
+    result := db.Order("id DESC").First(&message)
+
+    if result.Error != nil {
+        log.Printf("Error fetching latest message: %v", result.Error)
+        _, err := s.ChannelMessageSend(m.ChannelID, "❌ Could not fetch the latest message.")
+        if err != nil {
+            log.Printf("Error sending error message: %v", err)
+        }
+        return
+    }
+
+    // Send the latest message to the channel
+    _, err := s.ChannelMessageSend(m.ChannelID, message.Content)
+    if err != nil {
+        log.Printf("Error sending latest message: %v", err)
+    }
 }
