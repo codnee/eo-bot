@@ -1,0 +1,20 @@
+# fly.toml app configuration file generated for eo-bot on 2025-10-17T18:42:39+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'eo-bot'
+primary_region = 'ams'
+
+[build]
+
+# Keep the bot running continuously
+[deploy]
+  strategy = "immediate"
+
+[experimental]
+  auto_rollback = true
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'
