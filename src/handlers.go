@@ -96,7 +96,8 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Send the message to Discord
-	_, err := s.ChannelMessageSend(m.ChannelID, message.Content)
+	_, err := s.ChannelMessageSend(m.ChannelID, `"` + message.Content + `"`)
+
 	if err != nil {
 		log.Printf("Error sending message: %v", err)
 	}
