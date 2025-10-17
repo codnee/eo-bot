@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -9,6 +10,12 @@ import (
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore messages from the bot itself
 	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	// Check if message is a DM and starts with !new
+	if m.GuildID == "" && len(m.Content) > 4 && m.Content[:4] == "!new" {
+		handleNewMessage(s, m)
 		return
 	}
 
@@ -24,6 +31,39 @@ func handlePing(s *discordgo.Session, m *discordgo.MessageCreate) {
 	_, err := s.ChannelMessageSend(m.ChannelID, "Pong! 🏓 - New EO Bot coming soon")
 	if err != nil {
 		log.Printf("Error sending message: %v", err)
+	}
+}
+
+func handleNewMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Extract and trim the message content after "!new"
+	content := strings.TrimSpace(m.Content[4:])
+	if content == "" {
+		_, err := s.ChannelMessageSend(m.ChannelID, "Please provide a message after !new")
+		if err != nil {
+			log.Printf("Error sending message: %v", err)
+		}
+		return
+	}
+
+	// Create and save the new message
+	message := Message{
+		Content: content,
+	}
+	result := db.Create(&message)
+
+	if result.Error != nil {
+		log.Printf("Error saving message to database: %v", result.Error)
+		_, err := s.ChannelMessageSend(m.ChannelID, "Sorry, I couldn't save your message. Please try again later.")
+		if err != nil {
+			log.Printf("Error sending message: %v", err)
+		}
+		return
+	}
+
+	// Send confirmation
+	_, err := s.ChannelMessageSend(m.ChannelID, "✅ Message saved successfully!")
+	if err != nil {
+		log.Printf("Error sending confirmation: %v", err)
 	}
 }
 
