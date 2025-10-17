@@ -22,8 +22,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	switch m.Content {
 	case "!eo":
 		handleEo(s, m)
-	case "!latest":
-		handleLatest(s, m)
 	case "!help":
 		handleHelp(s, m)
 	}
@@ -104,33 +102,11 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func handleLatest(s *discordgo.Session, m *discordgo.MessageCreate) {
-    var message Message
-    // Get the most recent message based on ID (assuming auto-incrementing)
-    result := db.Order("id DESC").First(&message)
-
-    if result.Error != nil {
-        log.Printf("Error fetching latest message: %v", result.Error)
-        _, err := s.ChannelMessageSend(m.ChannelID, "❌ Could not fetch the latest message.")
-        if err != nil {
-            log.Printf("Error sending error message: %v", err)
-        }
-        return
-    }
-
-    // Send the latest message to the channel
-    _, err := s.ChannelMessageSend(m.ChannelID, message.Content)
-    if err != nil {
-        log.Printf("Error sending latest message: %v", err)
-    }
-}
-
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	helpMessage := `📝 **Available Commands** 📝
 
 - ` + "`!new <message>`" + ` - Save a new message to the database (DMs only)
 - ` + "`!eo`" + ` - Get a random message from the database
-- ` + "`!latest`" + ` - Get the most recent message from the database
 - ` + "`!help`" + ` - Show this help message
 
 For support, contact the bot administrator.`
