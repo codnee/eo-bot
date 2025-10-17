@@ -20,19 +20,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch m.Content {
-	case "!ping":
-		handlePing(s, m)
 	case "!eo":
 		handleEo(s, m)
 	case "!latest":
 		handleLatest(s, m)
-	}
-}
-
-func handlePing(s *discordgo.Session, m *discordgo.MessageCreate) {
-	_, err := s.ChannelMessageSend(m.ChannelID, "Pong! 🏓 - New EO Bot coming soon")
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
 	}
 }
 
