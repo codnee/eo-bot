@@ -1,66 +1,63 @@
-# Discord Bot
+# EO Bot
 
-A Discord bot built with Go and PostgreSQL
+A Discord bot that responds with random messages from a predefined set of responses.
 
 ## Project Structure
-
-Simple flat structure with clear separation of concerns:
 
 ```
 src/
 ├── main.go      # Application entry point
-├── bot.go       # Bot lifecycle management
-├── config.go    # Configuration loading
-├── database.go  # Database connection & migrations
-├── handlers.go  # Discord command handlers
-└── models.go    # Database models
+├── bot.go       # Bot initialization and connection
+├── config.go    # Environment configuration
+├── database.go  # Database connection and queries
+├── handlers.go  # Command handlers
+└── models.go    # Data models
 ```
 
 ## Prerequisites
 
 - Go 1.25 or later
 - PostgreSQL database
-- Discord Bot Token from [Discord Developer Portal](https://discord.com/developers/applications)
+- Discord Bot Token
 
-## Local Development
+## Setup
 
-1. Copy the example environment file and update with your values:
+1. Copy the example environment file:
    ```bash
    cp .env.example .env
    ```
+   Update the values in `.env` with your configuration.
 
 2. Install dependencies:
    ```bash
    go mod download
    ```
 
-3. Build the bot:
+3. Run the bot:
    ```bash
-   go build -o bin/eo-bot ./src
-   ```
-
-4. Run the bot:
-   ```bash
-   # Using go run
    go run ./src
-   
-   # Or run the compiled binary
-   ./bin/eo-bot
    ```
 
-## Available Commands
+## Usage
 
-- `!ping` - Responds with "Pong! 🏓"
-- `!eo` - Fetches and sends a random message from the database
+The bot responds to the following commands:
 
-## Database
+- `!eo` - Get a random message that hasn't been sent recently in the current channel
+- `!new [message]` - Add a new message to the bot's database (DM only)
+- `!help` - Show available commands
 
-The bot uses PostgreSQL with auto-migration. Tables are automatically created on startup:
-- `messages` - Stores bot messages
-- `message_history` - Tracks sent messages (prevents repeating last 20)
+### Adding New Messages
 
-To add custom messages to the database:
-
-```sql
-INSERT INTO messages (content) VALUES ('Your custom message here');
+To add new messages, send the bot a direct message (DM) with the following format:
 ```
+!new Your message here
+```
+
+### Message Rotation
+- The bot keeps track of the last 20 messages sent in each channel
+- It will avoid repeating these messages in the same channel
+- Messages are selected randomly from the remaining pool
+
+## Deployment
+
+See `QUICK_START.md` for deployment instructions.
