@@ -33,10 +33,21 @@ src/
    go mod download
    ```
 
-3. Run the bot:
-   ```bash
-   go run ./src
-   ```
+### Running the Bot
+
+#### Option 1: Quick Run (Development)
+```bash
+go run ./src
+```
+
+#### Option 2: Build and Run (Production-like)
+```bash
+# Build
+go build -o bin/eo-bot ./src
+
+# Run
+./bin/eo-bot
+```
 
 ## Usage
 
@@ -58,6 +69,31 @@ To add new messages, send the bot a direct message (DM) with the following forma
 - It will avoid repeating these messages in the same channel
 - Messages are selected randomly from the remaining pool
 
-## Deployment
 
-See `QUICK_START.md` for deployment instructions.
+### Adding a New Command
+
+1. Open `src/handlers.go`
+2. Add your handler function:
+   ```go
+   func handleYourCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+       s.ChannelMessageSend(m.ChannelID, "Your response")
+   }
+   ```
+3. Register it in the `messageCreate` switch statement:
+   ```go
+   case "!yourcommand":
+       handleYourCommand(s, m)
+   ```
+
+### Common Issues
+
+**"DISCORD_BOT_TOKEN not found"**
+- Make sure `.env` file exists
+- Check that `DISCORD_BOT_TOKEN=your_token` is set
+
+**"DATABASE_URL not found"**
+- Make sure `.env` file has `DATABASE_URL`
+- Format: `postgres://user:password@host:port/dbname?sslmode=disable`
+
+**"No messages in database"**
+- Manually insert: `psql $DATABASE_URL -c "INSERT INTO messages (content) VALUES ('Test');"`
