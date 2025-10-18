@@ -16,6 +16,11 @@ func newBot(token string) (*Bot, error) {
 		return nil, err
 	}
 
+	// Only request necessary intents for message handling
+	session.Identify.Intents = discordgo.IntentsGuildMessages |
+		discordgo.IntentsDirectMessages |
+		discordgo.IntentMessageContent
+
 	session.AddHandler(messageCreate)
 
 	return &Bot{
