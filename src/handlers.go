@@ -61,12 +61,12 @@ func handleNewMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Get the last 20 message IDs from history for THIS channel
+	// Get the last 50 message IDs from history for THIS channel
 	var recentMessageIDs []uint
 	db.Model(&MessageHistory{}).
 		Where("channel_id = ?", m.ChannelID).
 		Order("sent_at DESC").
-		Limit(20).
+		Limit(50).
 		Pluck("message_id", &recentMessageIDs)
 
 	// Select a random message NOT in the recent list
