@@ -9,7 +9,6 @@ import (
 
 type Config struct {
 	DiscordToken string
-	DatabaseURL  string
 	SQLitePath   string
 }
 
@@ -20,11 +19,6 @@ func loadConfig() *Config {
 	token := os.Getenv("DISCORD_BOT_TOKEN")
 	if token == "" {
 		log.Fatal("DISCORD_BOT_TOKEN environment variable is required")
-	}
-
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Println("DATABASE_URL environment variable is not set; Postgres connection will be skipped")
 	}
 
 	sqlitePath := os.Getenv("SQLITE_DB_PATH")
@@ -38,7 +32,6 @@ func loadConfig() *Config {
 
 	return &Config{
 		DiscordToken: token,
-		DatabaseURL:  dbURL,
 		SQLitePath:   sqlitePath,
 	}
 }
