@@ -5,7 +5,19 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"gorm.io/gorm"
 )
+
+func fallbackDB(err error) *gorm.DB {
+	if err == nil {
+		return nil
+	}
+	if pgdb == nil {
+		return nil
+	}
+	log.Printf("SQLite error; falling back to Postgres: %v", err)
+	return pgdb
+}
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore messages from the bot itself
@@ -43,6 +55,11 @@ func handleNewMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		Content: content,
 	}
 	result := db.Create(&message)
+	if result.Error != nil {
+		if fb := fallbackDB(result.Error); fb != nil {
+			result = fb.Create(&message)
+		}
+	}
 
 	if result.Error != nil {
 		log.Printf("Error saving message to database: %v", result.Error)
@@ -61,21 +78,44 @@ func handleNewMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
+	activeDB := db
+
 	// Get the last 50 message IDs from history for THIS channel
 	var recentMessageIDs []uint
-	db.Model(&MessageHistory{}).
+	result := activeDB.Model(&MessageHistory{}).
 		Where("channel_id = ?", m.ChannelID).
 		Order("sent_at DESC").
 		Limit(50).
 		Pluck("message_id", &recentMessageIDs)
+	if result.Error != nil {
+		if fb := fallbackDB(result.Error); fb != nil {
+			activeDB = fb
+			recentMessageIDs = nil
+			activeDB.Model(&MessageHistory{}).
+				Where("channel_id = ?", m.ChannelID).
+				Order("sent_at DESC").
+				Limit(50).
+				Pluck("message_id", &recentMessageIDs)
+		}
+	}
 
 	// Select a random message NOT in the recent list
 	var message Message
-	query := db.Order("RANDOM()")
+	query := activeDB.Order("RANDOM()")
 	if len(recentMessageIDs) > 0 {
 		query = query.Where("id NOT IN ?", recentMessageIDs)
 	}
-	result := query.First(&message)
+	result = query.First(&message)
+	if result.Error != nil && activeDB == db {
+		if fb := fallbackDB(result.Error); fb != nil {
+			activeDB = fb
+			query = activeDB.Order("RANDOM()")
+			if len(recentMessageIDs) > 0 {
+				query = query.Where("id NOT IN ?", recentMessageIDs)
+			}
+			result = query.First(&message)
+		}
+	}
 
 	if result.Error != nil {
 		log.Printf("Error fetching message from database: %v", result.Error)
@@ -91,8 +131,13 @@ func handleEo(s *discordgo.Session, m *discordgo.MessageCreate) {
 		MessageID: message.ID,
 		ChannelID: m.ChannelID,
 	}
-	if err := db.Create(&history).Error; err != nil {
+	if err := activeDB.Create(&history).Error; err != nil {
 		log.Printf("Error recording message history: %v", err)
+		if activeDB == db {
+			if fb := fallbackDB(err); fb != nil {
+				_ = fb.Create(&history).Error
+			}
+		}
 	}
 
 	// Send the message to Discord

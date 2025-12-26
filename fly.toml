@@ -6,6 +6,9 @@
 app = 'eo-bot'
 primary_region = 'ams'
 
+[env]
+  SQLITE_DB_PATH = '/data/eo-bot.sqlite'
+
 [build]
 
 # Keep the bot running continuously
@@ -18,3 +21,7 @@ primary_region = 'ams'
 [[vm]]
   size = 'shared-cpu-1x'
   memory = '256mb'
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'

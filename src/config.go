@@ -10,6 +10,7 @@ import (
 type Config struct {
 	DiscordToken string
 	DatabaseURL  string
+	SQLitePath   string
 }
 
 func loadConfig() *Config {
@@ -23,11 +24,21 @@ func loadConfig() *Config {
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL environment variable is required")
+		log.Println("DATABASE_URL environment variable is not set; Postgres connection will be skipped")
+	}
+
+	sqlitePath := os.Getenv("SQLITE_DB_PATH")
+	if sqlitePath == "" {
+		if os.Getenv("FLY_APP_NAME") != "" {
+			sqlitePath = "/data/eo-bot.sqlite"
+		} else {
+			sqlitePath = "eo-bot.sqlite"
+		}
 	}
 
 	return &Config{
 		DiscordToken: token,
 		DatabaseURL:  dbURL,
+		SQLitePath:   sqlitePath,
 	}
 }

@@ -4,7 +4,7 @@ FROM golang:1.25-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev sqlite-dev
 
 # Download dependencies
 COPY go.mod go.sum ./
@@ -22,7 +22,7 @@ FROM alpine:3.18
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates sqlite-libs
 
 # Copy the binary from the builder
 COPY --from=builder /app/bin/eo-bot /app/eo-bot

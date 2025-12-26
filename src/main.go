@@ -10,7 +10,7 @@ import (
 func main() {
 	cfg := loadConfig()
 
-	if err := initDatabase(cfg.DatabaseURL); err != nil {
+	if err := initDatabase(cfg.SQLitePath, cfg.DatabaseURL); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer closeDatabase()
