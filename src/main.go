@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +15,15 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer closeDatabase()
+
+	// Start HTTP server for download endpoint
+	go func() {
+		http.HandleFunc("/download", downloadHandler)
+		log.Println("HTTP server listening on :8080")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			log.Printf("HTTP server error: %v", err)
+		}
+	}()
 
 	discordBot, err := newBot(cfg.DiscordToken)
 	if err != nil {
